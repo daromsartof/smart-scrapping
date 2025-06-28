@@ -12,7 +12,8 @@ Guidelines:
 - Match text content, headings, or attribute patterns.
 - Extract dynamic data that matches the user’s intent.
 - Never invent information.
-- Output must be strictly in JSON format.
+- If you give an url you must give the absolute complete url
+- Output must be strictly in JSON format, no comment, no other text.
 
 Input:
 - user_query: {user_prompt}

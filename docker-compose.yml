@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  web-scraping-agent:
+    build: .
+    container_name: web-scraping-agent
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - LLM_TEMPERATURE=${LLM_TEMPERATURE:-0.1}
+      - LLM_MAX_TOKENS=${LLM_MAX_TOKENS:-30000}
+      - REQUEST_TIMEOUT=${REQUEST_TIMEOUT:-30}
+      - LLM_TIMEOUT=${LLM_TIMEOUT:-60}
+    volumes:
+      # Mount output directory to persist results
+      - ./output:/app/output
+      # Mount environment file (optional)
+      - ./.env:/app/.env:ro
+    ports:
+      - "8000:8000"
+    # restart: unless-stopped
+    # Run in detached mode for background execution
+    # Use this for development: docker-compose up -d
+    # Use this for interactive mode: docker-compose run --rm web-scraping-agent

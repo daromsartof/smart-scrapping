@@ -7,6 +7,7 @@ from langchain_core.messages import HumanMessage
 from dotenv import load_dotenv
 import os
 from langchain.prompts import ChatPromptTemplate
+import uuid
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def create_scraping_tool(config: Dict[str, Any]) -> WebScrapingTool:
     """Create configured web scraping tool"""
-    return WebScrapingTool(max_content_length=config["max_scrape_length"])
+    return WebScrapingTool()
 
 
 def get_int_env(key: str, default: int) -> int:
@@ -49,7 +50,7 @@ def build_config() -> Dict[str, Any]:
     return {
         "google_api_key": google_api_key,
         "llm_temperature": get_float_env("LLM_TEMPERATURE", 0.1),
-        "llm_max_tokens": get_int_env("LLM_MAX_TOKENS", 3000),
+        "llm_max_tokens": get_int_env("LLM_MAX_TOKENS", 30000),
         "request_timeout": get_int_env("REQUEST_TIMEOUT", 30),
         "llm_timeout": get_int_env("LLM_TIMEOUT", 60),
     }
@@ -57,10 +58,10 @@ def build_config() -> Dict[str, Any]:
 async def main(): 
     try:
         scraping_tool = create_scraping_tool({"max_scrape_length": 200000})
-        user_prompt = "lister tous les biens en encore en vente"
+        user_prompt = "Lister danse un tableau de json tous les liens des imobiliers de l'agence, avec les champs suivants: 'id' : c'est l'identifiant du bien, 'nom' : c'est le nom du bien, 'url': c'est l'url du bien"
         
         # Await the async scrape
-        html = await scraping_tool._arun(url="https://gary.ch/acheter")
+        html = await scraping_tool._arun(url="https://www.balocco-immobilier.ch/nos-proprietes/")
         
         # Build config and initialize LLM
         config = build_config()
@@ -83,6 +84,8 @@ async def main():
             "html": html
         })
 
+        with open(f"output_test-26-06-{str(uuid.uuid4())}.json", "w") as f:
+            f.write(response.content)
         print(response.content)
 
     except Exception as e:
