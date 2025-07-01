@@ -23,15 +23,17 @@ class WebScrapingTool():
                 tags_to_extract = get_default_tags()
 
             loader = AsyncChromiumLoader([url])
-         
+            
             if is_async:
                 html_docs = await asyncio.to_thread(loader.load)
             else:
                 html_docs = loader.load()
                 
-            html = html_docs[0].page_content if html_docs else ""
+            #html = html_docs[0].page_content if html_docs else ""
             clean_docs = []
             for d in html_docs:
+                with open("text_only.html", "w", encoding="utf-8") as file:
+                    file.write(str(d.page_content))
                 soup = BeautifulSoup(d.page_content, "html.parser")
                 # remove attrs you don’t want
                 for tag in soup.find_all(True):
@@ -69,6 +71,7 @@ class WebScrapingTool():
 
 
         except Exception as e:
+            print(str(e))
             return f"Web scraping error for {url}: {str(e)}"
 
     def _run(self, url: str, tags_to_extract: List[str] = None) -> str:

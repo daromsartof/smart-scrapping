@@ -20,4 +20,7 @@ Input:
 - html_content: {html}
 
 Return:
-Only valid JSON object containing the extracted data.
+Only valid JSON object containing the extracted {{
+    data: [],
+    next_url: None if no pagination or no next page, Url of the next page if have i pagination or has next page url for a list
+}}
