@@ -1,7 +1,9 @@
 
 services:
   web-scraping-agent:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: web-scraping-agent
     environment:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
