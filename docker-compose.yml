@@ -16,7 +16,7 @@ services:
       - ./.env:/app/.env:ro
     ports:
       - "8000:8000"
-    # restart: unless-stopped
+    restart: unless-stopped
     # Run in detached mode for background execution
     # Use this for development: docker-compose up -d
     # Use this for interactive mode: docker-compose run --rm web-scraping-agent

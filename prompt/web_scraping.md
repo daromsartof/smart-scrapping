@@ -22,5 +22,8 @@ Input:
 Return:
 Only valid JSON object containing the extracted {{
     data: [],
-    next_url: None if no pagination or no next page, Url of the next page if have i pagination or has next page url for a list
+    next_url: None if no pagination or no next page, Url of the next page if have i pagination or has next page url for a list 
 }}
+
+exeption: 
+sometimes we need to redirect on other site to get the list of the data, if you dont see the data search the url to redirect and put it on the "next_url"

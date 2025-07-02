@@ -13,6 +13,16 @@ def get_default_tags() -> List[str]:
 
 
 class WebScrapingTool():
+    def _get_frame_url(self, html_docs):
+        soup = BeautifulSoup(html_docs[0].page_content, "html.parser")
+        with open("html_docs.html", "w", encoding="utf-8") as file:
+            file.write(str(html_docs[0].page_content))
+        iframe = soup.find('iframe')
+        print(iframe)
+        if iframe:
+            iframe_src = iframe.get('src')
+            return iframe_src
+        return None
 
     async def _process_scraping(
         self, url: str, tags_to_extract: List[str] = None, is_async: bool = True
@@ -60,14 +70,14 @@ class WebScrapingTool():
             with open("text_only.txt", "w", encoding="utf-8") as file:
                 file.write(str(text_only))
                 
-            return f"""
+            return (f"""
                 **Website Scraped:** {url}
                 **Content Extracted:**
 
                 {text_only}
 
                 **Note:** Complete website content for comprehensive analysis.
-            """
+            """, html_docs)
 
 
         except Exception as e:

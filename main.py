@@ -20,9 +20,9 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 class State(TypedDict):
-    data: List      # everything we’ve scraped so far
+    data: List      # everything we've scraped so far
     next_url: Optional[str]         # URL of the next page, or None
-    page_idx: int                   # 1‑based page counter
+    page_idx: int                   # 1-based page counter
     page_limit: int
 
 def create_scraping_tool(config: Dict[str, Any]) -> WebScrapingTool:
@@ -74,23 +74,29 @@ async def get_page_data(state: State) -> State:
     try:
         scraping_tool = create_scraping_tool({"max_scrape_length": 200000})
         user_prompt = """
-            Lister danse un tableau de json tous les liens des imobiliers de l'agence, avec les champs suivants: 
-                'id' : c'est l'identifiant du bien, 
-                'nom' : c'est le nom du bien, 
-                'url': c'est l'url du bien,
-                'image_url': l'url de l'image du bien,
-                'status': vendu ou a louer ou a vendre
+            Liste dans un tableau JSON tous les biens immobiliers de l'agence en incluant uniquement les champs suivants :
+                - `id` : identifiant du bien
+                - `nom` : nom du bien
+                - `url` : URL du bien
+                - `image_url` : URL de l'image principale du bien
+                - `status` : statut du bien :
+                    - 0 = loué
+                    - 1 = à louer
+                    - 2 = vendue
+                    - 3 = à vendre
+
+            Respecte exactement la casse et l'ordre des clés indiqués.
         """
         print("state['next_url'] ", state['next_url'])
         # Await the async scrape
-        html = await scraping_tool._arun(url=state['next_url'])
+        html, html_docs = await scraping_tool._arun(url=state['next_url'])
         
         # Build config and initialize LLM
         config = build_config()
         llm = create_llm(config=config)
 
         # Load README.md content as system prompt
-        with open("./prompt/web_scraping.md", "r", encoding="utf-8") as f:
+        with open("./prompt/prompt.md", "r", encoding="utf-8") as f:
             content = f.read()
 
         # Construct the full prompt
@@ -112,9 +118,35 @@ async def get_page_data(state: State) -> State:
         clean_json = re.sub(r"```[\w]*\s*|\s*```$", "", response.content).strip()
         
         data_json = json.loads(clean_json)
+        
+        print("data_json['data']", len(data_json['data']))
+        url_redirect = None
+        if len(data_json['data']) == 0:
+            try:
+                url_redirect = scraping_tool._get_frame_url(html_docs)
+                print(url_redirect)
+            except Exception as e:
+                url_redirect = None
+                print(str(e))
+        
+        # Group data by status label
+        status_labels = {
+            "0": "loué",
+            "1": "à louer",
+            "2": "vendue",
+            "3": "à vendre"
+        }
+        grouped_data = {}
+        for item in data_json['data']:
+            status_code = str(item.get('status'))
+            label = status_labels.get(status_code, status_code)
+            if label not in grouped_data:
+                grouped_data[label] = []
+            grouped_data[label].append(item)
+        
         return {
-            "data": data_json['data'],
-            "next_url": data_json['next_url'],  
+            "data": grouped_data,
+            "next_url": data_json.get('next_url') or url_redirect,  
             "page_idx": state["page_idx"] + 1,
         }
     except Exception as e:
@@ -127,7 +159,7 @@ async def get_page_data(state: State) -> State:
     
 
 def accumulate(old: State, delta: State) -> State:
-    """Merge the newly‑scraped items into the running state."""
+    """Merge the newly-scraped items into the running state."""
     return {
         "data": old["data"] + delta["data"],
         "next_url": delta["next_url"],
@@ -143,21 +175,9 @@ def should_continue(state: State) -> str:
     reached_cap = state["page_idx"] > state["page_limit"]
     has_more    = bool(state["next_url"])
     return "get_page_data" if has_more and not reached_cap else "END"
-        
-async def main():
-    url = "https://www.dynasty-immobilier.ch/acheter"
-    page_limit = 3
-    init_state = {
-        "data": [],
-        "next_url": url,
-        "page_idx": 1,
-        "page_limit": page_limit,
-    }
-    
-   
-    index = 1
-    data = []
-    #reponse = await get_page_data(url)
+
+
+def graph_constuct():
     builder = StateGraph(State)
     builder.add_node("get_page_data", get_page_data, accumulator=accumulate)
     
@@ -172,8 +192,22 @@ async def main():
     with open("graph.png", "wb") as f:
         f.write(graph.get_graph().draw_mermaid_png())
 
-    print("Saved to graph.png – open it with any image viewer")
+    return graph
+
+
+async def main():
+    url = "https://www.propertyowner.ch/fr/agent/olivier-angeloz/"
+    page_limit = 3
+    init_state = {
+        "data": [],
+        "next_url": url,
+        "page_idx": 1,
+        "page_limit": page_limit,
+    }
+    
+    graph = graph_constuct()
     final = await graph.ainvoke(init_state)
+    
     print(final)
     if final["next_url"] is None:
         reason = "no more pages"
