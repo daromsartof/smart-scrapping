@@ -88,9 +88,10 @@ async def get_page_data(state: State) -> State:
             Respecte exactement la casse et l'ordre des clés indiqués.
         """
         print("state['next_url'] ", state['next_url'])
+        
         # Await the async scrape
         html, html_docs = await scraping_tool._arun(url=state['next_url'])
-        
+      
         # Build config and initialize LLM
         config = build_config()
         llm = create_llm(config=config)
@@ -112,9 +113,7 @@ async def get_page_data(state: State) -> State:
             "html": html
         })
 
-        with open(f"output_test-26-06-{str(uuid.uuid4())}.json", "w") as f:
-            f.write(response.content)
-            
+        
         clean_json = re.sub(r"```[\w]*\s*|\s*```$", "", response.content).strip()
         
         data_json = json.loads(clean_json)
@@ -143,7 +142,10 @@ async def get_page_data(state: State) -> State:
             if label not in grouped_data:
                 grouped_data[label] = []
             grouped_data[label].append(item)
-        
+            
+        with open(f"output_test-26-06-{str(uuid.uuid4())}.json", "w") as f:
+            f.write(str(grouped_data))
+            
         return {
             "data": grouped_data,
             "next_url": data_json.get('next_url') or url_redirect,  
@@ -196,7 +198,7 @@ def graph_constuct():
 
 
 async def main():
-    url = "https://www.propertyowner.ch/fr/agent/olivier-angeloz/"
+    url = "https://hltheurillatimmobilier.com/"
     page_limit = 3
     init_state = {
         "data": [],

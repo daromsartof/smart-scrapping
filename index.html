@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Listings Fetcher</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .input-container {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px auto;
+            display: block;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        #response {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            min-height: 200px;
+        }
+
+        .listing {
+            margin: 10px 0;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .listing a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .listing a:hover {
+            text-decoration: underline;
+        }
+
+        .error {
+            color: #e74c3c;
+            text-align: center;
+        }
+
+        .loading {
+            text-align: center;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>SCRAPING</h1>
+    <div class="input-container">
+        <input type="text" id="urlInput" placeholder="Enter URL (e.g., https://www.guestlee.ch/rent)"
+            value="https://www.guestlee.ch/rent">
+        <input type="number" id="maxPagesInput" placeholder="Enter max pages (e.g., 2)" value="2" min="1">
+    </div>
+    <button onclick="fetchListings()">Fetch Listings</button>
+    <div id="response"></div>
+
+    <script>
+        async function fetchListings() {
+            const responseDiv = document.getElementById('response');
+            const urlInput = document.getElementById('urlInput').value;
+            const maxPagesInput = parseInt(document.getElementById('maxPagesInput').value);
+
+            if (!urlInput || !maxPagesInput) {
+                responseDiv.innerHTML = '<p class="error">Please provide both URL and max pages</p>';
+                return;
+            }
+
+            responseDiv.innerHTML = '<p class="loading">Loading...</p>';
+
+            const myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
+
+            const raw = JSON.stringify({
+                "url": urlInput,
+                "page_limit": maxPagesInput
+            });
+
+            const requestOptions = {
+                method: "POST",
+                headers: myHeaders,
+                body: raw,
+                redirect: "follow"
+            };
+
+            try {
+                const response = await fetch("http://localhost:8000/scrape", requestOptions);
+                const result = await response.json();
+                console.log(result)
+                responseDiv.innerHTML = `
+                        <div class="listing">
+                            <strong>Page :</strong> ${result.pages}<br>
+                            <p>${JSON.stringify(result.data)}</p>
+                        </div>
+                    `
+            } catch (error) {
+                responseDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -39,6 +39,43 @@ class WebScrapingTool():
             else:
                 html_docs = loader.load()
                 
+        
+            html = html_docs[0].page_content if html_docs else ""
+            soup_1 = BeautifulSoup(html, "html.parser")
+            body_content = soup_1.body  # this gives you the full <body>...</body>
+            # List of tags you want to remove
+            tags_to_remove = ["option", "i", "img", "input", "script", "style", "svg", "select", "header", "footer"]
+
+            for tag_name in tags_to_remove:
+                for tag in soup_1.find_all(tag_name):
+                    tag.decompose()  # completely removes the tag and its content
+                    
+            for tag in soup_1.find_all(True):  # True matches all tags
+                if tag.has_attr('style'):
+                    del tag['style']
+                 # remove class attribute if present
+                if tag.has_attr('class'):
+                    del tag['class']
+                # remove id attribute if present
+                if tag.has_attr('id'):
+                    del tag['id']
+                # remove empty tags or tags with only whitespace
+                if not tag.contents or (tag.get_text(strip=True) == "" and not tag.find(True)):
+                    tag.decompose()
+            # Get just the cleaned <body> content
+            clean_body = soup_1.body
+
+            with open("cleaned_body.html", "w", encoding="utf-8") as file:
+                file.write(str(clean_body))
+                
+            return (f"""
+                **Website Scraped:** {url}
+                **Content Extracted:**
+
+                {clean_body}
+
+                **Note:** Complete website content for comprehensive analysis.
+            """, html_docs)
             #html = html_docs[0].page_content if html_docs else ""
             clean_docs = []
             for d in html_docs:
