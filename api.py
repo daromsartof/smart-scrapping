@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 import main
 from fastapi.middleware.cors import CORSMiddleware
-
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 app.add_middleware(
@@ -35,4 +35,9 @@ async def scrape(request: ScrapeRequest):
 @app.get("/health")
 def health():
     return {"status": "ok"} 
+
+@app.get("/", response_class=FileResponse)
+def health():
+     return FileResponse("index.html", media_type="text/html")
+    
 

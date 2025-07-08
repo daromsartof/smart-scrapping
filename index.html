@@ -87,8 +87,10 @@
 <body>
     <h1>SCRAPING</h1>
     <div class="input-container">
+        <label for="urlInput">URL</label>
         <input type="text" id="urlInput" placeholder="Enter URL (e.g., https://www.guestlee.ch/rent)"
             value="https://www.guestlee.ch/rent">
+        <label for="maxPagesInput">Max Pages</label>
         <input type="number" id="maxPagesInput" placeholder="Enter max pages (e.g., 2)" value="2" min="1">
     </div>
     <button onclick="fetchListings()">Fetch Listings</button>
@@ -125,13 +127,44 @@
             try {
                 const response = await fetch("http://localhost:8000/scrape", requestOptions);
                 const result = await response.json();
-                console.log(result)
+                let tableHTML = '';
+                for (const [category, listings] of Object.entries(result.data)) {
+                    tableHTML += `<h3>${category}</h3>`;
+                    tableHTML += `
+                        <table border="1" cellpadding="5" cellspacing="0" style="width:100%; border-collapse:collapse;">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>URL</th>
+                                    <th>Image</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    for (const listing of listings) {
+                        tableHTML += `
+                            <tr>
+                                <td>${listing.id}</td>
+                                <td>${listing.nom}</td>
+                                <td><a href="${listing.url}" target="_blank">${listing.url}</a></td>
+                                <td>${listing.image_url ? `<img src="${listing.image_url}" alt="Image" width="100"/>` : 'N/A'}</td>
+                                <td>${listing.status}</td>
+                            </tr>
+                        `;
+                    }
+                    tableHTML += `
+                            </tbody>
+                        </table>
+                    `;
+                }
                 responseDiv.innerHTML = `
-                        <div class="listing">
-                            <strong>Page :</strong> ${result.pages}<br>
-                            <p>${JSON.stringify(result.data)}</p>
-                        </div>
-                    `
+                    <div class="listing">
+                        <strong>Pages:</strong> ${result.pages}<br>
+                        ${tableHTML}
+                    </div>
+                `;
             } catch (error) {
                 responseDiv.innerHTML = `<p class="error">Error: ${error.message}</p>`;
             }
